@@ -1,0 +1,9 @@
+[b953e010-2c4b-3538-bcb1-0c88fc8f10e3]
+0=print 802-3-ethernet 
+1=print 802-3-ethernet.wake-on-lan
+2=describe 802-3-ethernet.wake-on-lan
+3=802-3-ethernet.wake-on-lan
+4=802-3-ethernet.wake-on-lan
+5=?
+6=?
+7=quit

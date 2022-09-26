@@ -1,0 +1,16 @@
+Desktop/
+
+.Xauthority
+.npmrc
+.zcompdump
+.zsh/cache/DEBS_avail
+.zsh/cache/DEBS_installed
+.local/share/nvim/site/pack/packer/start/
+.local/share/akonadi/db_data
+.local/share/akonadi/search_db
+.ssh/
+.npm/
+.vscode/?
+.zcompdump*
+.xfig*
+.swp

@@ -1,0 +1,15 @@
+[submodule ".zsh/zsh-completions"]
+	path = .zsh/zsh-completions
+	url = git@github.com:zsh-users/zsh-completions.git
+[submodule ".zsh/pure"]
+	path = .zsh/pure
+	url = git@github.com:sindresorhus/pure.git
+[submodule ".local/share/nvim/site/pack/packer/start/packer.fork"]
+	url = git@github.com:wbthomason/packer.nvim.git
+	path = .local/share/nvim/site/pack/packer/start/packer.fork
+[submodule ".basher"]
+	path = .basher
+	url = git@github.com:basherpm/basher.git
+[submodule ".config/Code"]
+	path = .config/Code
+	url = git@github.com:hinell/vscode.git

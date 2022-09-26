@@ -1,0 +1,132 @@
+[core]
+	editor = kate -b
+	autocrlf = input
+	untrackedCache = true
+    #  editor = notepad++.exe
+	# comment for use default editor
+[gui]
+[merge]
+	# vimdiff
+	# tool = notepad++.exe
+[gui]
+[credential]
+	helper = wincred
+[user]
+	name = Hinell
+	email = al.neodim@gmail.com
+[format]
+[color]
+	diff = auto
+	status = auto
+	branch = auto
+[alias]
+	a = add
+	# Add different categories of files
+	add-deleted= !git st -s ./ | grep -P '[D ][D ] ' | sed -E 's/[ D][ D] //' | xargs git add && echo 'Git: added all deleted fiels'
+	add-modified= !git st -s ./ | grep -P '[M ][M ] ' | sed -E 's/[ M]?[ M] //' | xargs git add  && echo 'Git: added all modified fiels'
+	add-untracked= !git st -s ./ | grep '?? ' | sed 's/?? //' | xargs git add && echo 'Git: added all untracked fiels'
+	s = stage
+	i = init
+	c = clone
+	r = reset
+	co = checkout
+	sw = switch
+	ci = commit
+	br = branch
+	st = status --show-stash
+	sts = stash
+	rem = remote
+	cfg = config
+	sm = submodule
+	mod = submodule
+	sme = submodule foreach
+	chrr = cherry-pick
+	# info = "!git log --decorate=auto --graph --oneline"
+	info = log --decorate=auto --graph --oneline
+	lg   = log -1
+	di   = diff
+	d    = diff
+	tags = info --simplify-by-decoration
+	self-update = update-git-for-windows
+    # cz ="!./node_modules/.bin/git-cz"  # <-- THIS WILL NOT WORK IF WE ARE NOT IN ROOT OF REPO
+    cz ="!npx git-cz"
+	dt = diff-tree
+	fixup = commit --fixup @~
+[push]
+	default = matching
+[rebase]
+	autoSquash = true
+[rerere]
+	enabled = false
+
+[help]
+	autoCorrect = 1
+    browser = google-chrome
+    format = html
+[web]
+	browser= google-chrome
+[winUpdater]
+	recentlySeenVersion = 2.25.0.windows.1
+	
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[sendemail]
+	smtpserver = smtp.gmail.com
+	smtpserverport = 587
+	smtpencryption = tls
+	smtpuser = al.neodim@gmail.com
+
+[safe]
+	directory = /media/all/ProgramsAndGames/pr/2020/
+	directory = /media/all/ProgramsAndGames/pr/2020/git.debian.fork
+	directory = /media/all/ProgramsAndGames/pr/2020/
+	directory = /media/all/ProgramsAndGames/pr/2020/git
+	directory = /media/all/ProgramsAndGames/pr/Devdocs/MDN/content
+	directory = /media/all/ProgramsAndGames/pr/2020/c++.practice
+	directory = /media/all/ProgramsAndGames/Backup/Users/Google Chrome Backup/Snippets
+	directory = /media/all/ProgramsAndGames/pr/2022/hsnips
+	directory = /media/all/ProgramsAndGames/pr/2019/user-css
+	directory = /media/all/ProgramsAndGames/pr/2020/cmake.fork
+	directory = /media/all/ProgramsAndGames/pr/2021/visual-studio-code/workspaces-cache
+	directory = /media/all/ProgramsAndGames/pr/Devdocs/zsh
+	directory = /media/all/ProgramsAndGames/Downloads/Software.x86.x64.Drivers/TP-Link_WiFiAdapter/rtl8188eu.fork
+	directory = /media/all/ProgramsAndGames/pr/2015/node
+	directory = /media/all/ProgramsAndGames/pr/2017/project-boilerplate
+	directory = /media/all/ProgramsAndGames/pr/2019/send.fork
+	directory = /media/all/ProgramsAndGames/pr/2019/serve-static.fork
+	directory = /media/all/ProgramsAndGames/pr/2017/countries.fork
+	directory = /media/all/ProgramsAndGames/pr/hinell
+	directory = /media/all/ProgramsAndGames/pr/2022/CMake-GitVersion.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/CMake-GitVersion.fork
+	directory = /media/all/ProgramsAndGames/pr/2021/Wikipedia
+	directory = /media/all/ProgramsAndGames/pr/2022/git-repo-data-cmake
+	directory = /media/all/ProgramsAndGames/pr/2022/shell/soundcloud-m3u82mp3
+	directory = /media/all/ProgramsAndGames/pr/2015/node.fork
+	directory = /media/all/ProgramsAndGames/pr/2020/hyperscan.c++.fork
+	directory = /media/all/ProgramsAndGames/pr/2020/LangX
+	directory = /media/all/ProgramsAndGames/pr/2020/git.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/flex.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/snipper
+	directory = /media/all/ProgramsAndGames/pr/2022/neovim/doc.fork
+	directory = /usr/share/nvim/site/pack/packer/start/packer.vim.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/neovim/neovim.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/neovim/neovim.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/tree-sitter.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/neovim
+	directory = /media/all/ProgramsAndGames/pr/2022/mold.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/neovim/neovim-qt.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/nerd-fonts
+	directory = /media/all/ProgramsAndGames/pr/2022/nerd-fonts.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/neovim/neovim.github.io.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/neovim/neovim.github.io.fork/doc
+	directory = /media/all/ProgramsAndGames/pr/2022/solvespace-fork
+	directory = /media/all/ProgramsAndGames/pr/2022/solvespace-fork/extlib/mimalloc
+	directory = /media/all/ProgramsAndGames/pr/Devdocs/learnxinyminutes-site.fork
+	directory = /media/all/ProgramsAndGames/pr/Devdocs/learnxinyminutes-site.fork/source/docs
+	directory = /media/all/ProgramsAndGames/pr/2022/neovim/plugins/telescope.nvim.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/neovim/doc.fork.main
+	directory = /media/all/Windows 10 v1909/Users/Alex/AppData/Roaming/Code/User
+	directory = /media/all/Windows 10 v1909/Users/Alex/AppData/Roaming/Code

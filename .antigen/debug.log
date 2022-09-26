@@ -1,0 +1,7 @@
+[WRN][1637315657.3758234978] /home/alex/.local/bin/antigen.zsh:266
+[WRN][1637315657.3758234978] -antigen-interactive-mode: toplevel:file:shfunc:shfunc $_ANTIGEN_INTERACTIVE = 
+[TRA][1637315657.3759088516] /home/alex/.local/bin/antigen.zsh:475
+[TRA][1637315657.3759088516] Gonna create compdump file @ env-setup COMPDUMP
+[TRA][1637315657.3759088516] TRACE
+-antigen-env-setup
+/home/alex/.local/bin/antigen.zsh

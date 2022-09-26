@@ -1,0 +1,17 @@
+[Desktop Entry]
+Comment=
+Exec=xterm -fs 10 -fa 'JetBrains Mono' -e nvim
+GenericName=Neovim in Xterm\s
+Icon=io.neovim.nvim
+Name=Neovim - Xterm\s
+NoDisplay=false
+Path=
+StartupNotify=true
+Terminal=false
+MimeType=text/english;text/plain;text/x-makefile;text/x-c++hdr;text/x-c++src;text/x-chdr;text/x-csrc;text/x-java;text/x-moc;text/x-pascal;text/x-tcl;text/x-tex;application/x-shellscript;text/x-c;text/x-c++;application/x-javascript;application/x-css
+TerminalOptions=
+Type=Application
+X-KDE-SubstituteUID=false
+X-KDE-Username=
+X-GNOME-SingleWindow=false
+Categories=Utility;TextEditor;Development
