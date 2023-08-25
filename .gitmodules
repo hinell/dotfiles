@@ -1,0 +1,15 @@
+[submodule "vscode"]
+	path = vscode
+	url = git@github.com:hinell/vscode.git
+[submodule "nvim"]
+	path = nvim
+	url = git@github.com:hinell/nvim.git
+[submodule "zsh/.zsh/pure"]
+	path = zsh/.zsh/pure
+	url = git@github.com:sindresorhus/pure.git
+[submodule "zsh/.zsh/zsh-completions"]
+	path = zsh/.zsh/zsh-completions
+	url = git@github.com:zsh-users/zsh-completions.git
+[submodule "nvm/.nvm"]
+	path = nvm/.nvm
+	url = git@github.com:nvm-sh/nvm.git

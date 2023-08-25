@@ -1,0 +1,5 @@
+checked_for_update_at: 2022-01-23T15:45:45.89320506+03:00
+latest_release:
+    version: v2.4.0
+    url: https://github.com/cli/cli/releases/tag/v2.4.0
+    publishedat: 2021-12-21T16:39:45Z

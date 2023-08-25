@@ -1,0 +1,199 @@
+#!/usr/bin/env -S zsh
+# Title.......: tree-sitter-config
+# Summary.....: tree-sitter installer/deinstaller script
+# Version.....: 1.0.0
+# Created.....: September 14, 2023 
+# Authors.....: Alex A. Davronov <al.neodim@gmail.com> (2023-)
+# Repository..: N/A
+# Description.: Install/uninstall tree-sitter easily for linux-systems
+# Usage.......: Run in shell like an ordinary executable 
+# License.....: Copyright (C) 2023- Alex A. Davronov <al.neodim@gmail.com>
+# See LICENSE file or comment at the top of the main file
+# provided along with the source code for additional info
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+COMMAND_NAME=$(basename $0)
+${COMMAND_NAME}-version(){ echo 1.0.0; }
+
+${COMMAND_NAME}-help(){
+	cat <<-EOL
+	Usage: ${COMMAND_NAME} [OPTIONS] COMMAND
+	tree-sitter cli installer/uninstaller
+	
+	This is a small script that downloads & installs tree-sitter cli release
+	for Linux. x86, x64, arm, arm64 are the only supported archs as of 1.0.0. version.
+
+	By default, all artifacts are downloaded into user $HOME/Downloads dir
+	tree-sitter cli binary is installed into /usr/bin.
+
+	The script requires github-cli. 
+	 
+	COMMANDS:
+	  	install		install tree-sitter-cli interactively
+	 	uninstall	uninstall tree-sitter-cli interactively
+	 	status		display status of tree-sitter-cli
+		 
+	Options:
+	 	-v, --version	print script version
+	 	-h, --help	print help
+	EOL
+}
+
+# Use 2> error.log to read the output of the command"
+
+system_log_unsupported(){
+	# Use 2> error.log to read the output of the command
+	echo -e "$0: $(tput setaf 1)error:$(tput op) your system is unsupported, consider contribution to this script. Contact al dot neodim at gmail dot coat."> /dev/stderr;
+}
+
+TS_REPO_NAME="tree-sitter/tree-sitter"
+TS_CONFIG_DOWNLOAD_DIR="ts-config-artifacts"
+TS_CONFIG_LINUX_INSTALL_PATH="/usr/bin"
+
+${COMMAND_NAME}-install-linux(){
+
+	local releases_tmp_path=/tmp/tree-sitter-config.tmp.txt
+	local releases=()
+	test -s "${releases_tmp_path}" || gh release -R ${TS_REPO_NAME} list | cut -d $'\t' -f 1 > "${releases_tmp_path}" 
+	test -f "${releases_tmp_path}" && releases=($(cat "${releases_tmp_path}"))
+	local versions=()
+	for relVer in ${releases}; 
+	do
+		versions+=(${relVer} "${relVer}")
+	done
+
+	local versionSelected=$(whiptail \
+		--menu "$0: select release version" \
+		--notags \
+		20 40 10 \
+		${versions[*]} \
+		3>&1 1>&2 2>&3
+	)
+
+	if [[ -z "${versionSelected}" ]]
+	then
+		echo -e "${0}:$(tput setaf 6)aborting:$(tput op)." > /dev/stderr; 
+	fi
+
+	local _DOWNLOAD_DIR=$(xdg-user-dir DOWNLOAD)${TS_CONFIG_DOWNLOAD_DIR}
+	test -d "${_DOWNLOAD_DIR}" || mkdir -v "${_DOWNLOAD_DIR}"
+
+	# Download system-specific releases
+	# See zsh/regex module
+	setopt REMATCH_PCRE
+	if [[ "$(uname -p)" =~ 64 ]] then
+		gh release -R ${TS_REPO_NAME} download --skip-existing -D "${_DOWNLOAD_DIR}" -p '*linux*x64*'
+	elif [[ "$(uname -p)" =~ 86 ]]; then
+		gh release -R ${TS_REPO_NAME} download --skip-existing -D "${_DOWNLOAD_DIR}" -p '*linux*x86*'
+	elif [[ "$(uname -p)" =~ arm64 ]]; then
+		gh release -R ${TS_REPO_NAME} download --skip-existing -D "${_DOWNLOAD_DIR}" -p '*linux*arm64*'
+	fi
+
+	[[ -z "${_DOWNLOAD_DIR}" ]] && {
+		echo -e "${0}:$(tput setaf 6)aborting:$(tput op): nothing to install, ${_DOWNLOAD_DIR} folder is empty!" > /dev/stderr;
+		exit 1
+	}
+
+	for exe in $(ls ${_DOWNLOAD_DIR}/*); do
+		[[ "${exe}" =~ '.*\.gz' && ! -f "${exe%%.gz}" ]] && gunzip "${exe}"
+	done
+
+	# Install first file in the download dir
+	for exe in $(ls ${_DOWNLOAD_DIR}/*); do
+		[[ "${exe}" =~ '.*\.gz' ]] && continue
+		# ls -ha -l -t -c --color=auto --group-directories-first "${_DOWNLOAD_DIR}"
+		local _EXE_INSTALL_PATH="${TS_CONFIG_LINUX_INSTALL_PATH}/tree-sitter"
+		if [[ -x "${_EXE_INSTALL_PATH}" ]];
+		then
+			echo "${0}:"${_EXE_INSTALL_PATH}" is already installed"
+			break;
+		else
+			echo -n "${0}:"${_EXE_INSTALL_PATH}" installing ... "
+			su root -c "install \"${exe}\" \"${_EXE_INSTALL_PATH}\""
+			echo -e "$(tput setaf 2 bold)done$(tput sgr0)"
+			break;
+		fi 
+	done
+
+	tree-sitter --version
+
+	unsetopt REMATCH_PCRE	
+}
+
+# ----------------------------------------------------------------main
+${COMMAND_NAME}(){
+	
+	local PREFIX_PATH=.
+
+	while true; do
+		case ${1} in
+			(-v|--version)
+				${COMMAND_NAME}-version
+				return
+			;;
+			(-h|--help)
+				${COMMAND_NAME}-help
+				return
+			;;
+			(status)
+				command -v tree-sitter
+				return $?
+			;;
+			(install)
+				local SYSTEM_ARCH=$(arch)
+
+				echo -e "${0}:$(tput setaf 5)info:$(tput op) your current system is ${PRETTY_NAME} ${SYSTEM_ARCH}" > /dev/stderr; 
+				command -v gh &> /dev/null || {
+					echo -e "${0}:$(tput setaf 6)aborting:$(tput op) no github-cli is found, aborting!" > /dev/stderr;
+					return 1
+				}
+
+				if [[ "${OSTYPE}" == "linux-gnu"* ]]; then
+					local DISTRIB=unknown
+					test -f /etc/os-release && . $_
+					test -n ${NAME} && DISTRIB=${NAME}
+					if [[ ${DISTRIB} = "Ubuntu"* ]]; then
+						if uname -a | grep -q '^Linux.*Microsoft'; then
+							# ubuntu via WSL Windows Subsystem for Linux
+							system_log_unsupported
+							exit 1	
+						else
+							# native ubuntu
+							${COMMAND_NAME}-install-linux
+						fi
+					elif [[ ${DISTRIB} = "Debian"* ]]; then
+						# debian
+						${COMMAND_NAME}-install-linux
+					fi
+				elif [[ "${OSTYPE}" == "darwin"* ]]; then
+					# mac
+					system_log_unsupported
+					exit 1	
+				fi
+				break
+			;;
+			(uninstall)
+				rm -vi "${TS_CONFIG_LINUX_INSTALL_PATH}/tree-sitter"
+				break;
+			;;
+			(*)
+				${COMMAND_NAME}-help
+				return 1
+			;;
+			# switch.stub
+		esac
+	done;
+
+} # main end
+${COMMAND_NAME} "${@}"
+
+unset -f ${COMMAND_NAME}
+
+# ex: ft=zsh

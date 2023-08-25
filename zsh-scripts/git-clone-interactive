@@ -1,0 +1,138 @@
+#!/usr/bin/env -S zsh
+# File........: git-clone-interactive
+# Summary.....: Git clone interactively
+# Version.....: 1.0.0
+# Created.....: September 2022
+# Authors.....: Alex A. Davronov <al.neodim@gmail.com> (2023-)
+# Repository..: N/A
+# Description.: Git clone interactively: sets various vars automatically when cloning
+# prompts to select dest path, branch name, etc 
+# Usage.......: Run in shell
+
+# @summary I'm tasked with helping to clone repos; 
+# created no later than [November 02, 2022]
+# @usage  Run in bash 
+main(){
+	clear;
+	echo "Git clone prompter  Alexander A. Davronov 2022"
+
+	local 0="git-clone-interactive"
+	local REPO=${1}
+	local BRANCH=${2}
+
+	# https://www.gnu.org/software/bash/manual/html_node/Bash-Conditional-Expressions.html#Bash-Conditional-Expressions
+	if [[ -n "${REPO}"  ]];
+	then
+		# BASH_REMATCH for the regexp
+		echo -n "$0: \x1B[32m?\x1B[0m \x1B[1mRepo to be cloned? \x1B[22m Please specify: "
+		echo "${REPO}"
+	else	
+		echo -n "$0: \x1B[32m?\x1B[0m \x1B[1mRepo to be cloned? \x1B[22m Please specify: "
+		read REPO
+	fi
+
+	if [[ ! "$REPO" =~ .*/(.*)\.git ]]; 
+	then
+		echo "\x1B[31mError: \x1B[0m Git repo is required!" > /dev/stderr;
+		echo "\tRepo: ${REPO}"
+		# echo $match
+		return 1
+	fi
+
+	# Get reponame
+	#-------------------------------------
+	local REPONAME="${match[1]:-repo}.fork"
+	echo "$0 \x1B[32m?\x1B[0m \x1B[1mHow repo should be named? \x1B[22m (y/N) ${match[1]:-repo}.fork?"
+	read -sq || {
+		local REPONAME=$(whiptail \
+			--title "$0" \
+			--inputbox "specify repo name (include extension)" \
+			8 40 \
+			"${REPONAME}" \
+			3>&1 1>&2 2>&3)
+		
+		if [[ -z "$REPONAME" ]];
+		then
+			echo "${0}: empty value/ aborted!" 
+			return 1
+		fi
+	}
+	# https://www.gnu.org/software/bash/manual/html_node/Bash-Conditional-Expressions.html#Bash-Conditional-Expressions
+
+	# Ensure in right folder
+	#-------------------------------------
+	echo "$0 \x1B[32m?\x1B[0m \x1B[1mIs this folder is the right place? \x1B[22m (Y/n) $(pwd)"
+	read -qs || { echo " Aborting"; return 1; }  
+	
+	# Get the branch
+	#-------------------------------------
+	if [[ -z $BRANCH ]] 
+	then
+		# git show-ref --heads | cut -d'/' -f3
+		# BRANCHES=($(git for-each-ref --format='%(refname:lstrip=2)' refs/heads)) 
+		BRANCHES=($(git ls-remote "${REPO}" | cut -f 2)) 
+		BRANCHES=($(for b in ${BRANCHES[@]}; do echo "${b##*/} $b"; done))
+		BRANCH=main; # Default
+		# TODO: [Friday, January 27, 2023] Use generated branches! (see array above) 
+		BRANCH=$(whiptail --notags --menu \
+			"? Which branch to fetch? (only one branch will be fetched)" 30 80 20 \
+			${BRANCHES[@]} \
+			3>&1 1>&2 2>&3
+		)
+		# main     "main" \
+		# master   "master"  \
+		# gh-pages "gh-pages" \
+		# tag 	 "tag" 3>&1 1>&2 2>&3
+		
+		if [[ -z "$BRANCH"  ]];
+		then
+			echo "Canceled. Aborting."
+			return 1
+		fi
+		
+		if [[ "$BRANCH" == "tag" ]];
+		then
+			BRANCH=$(whiptail --inputbox \
+			"? Please, enter tag name" 20 40 3>&1 1>&2 2>&3
+		)
+		fi
+	else
+		echo -n "$0 \x1B[32m?\x1B[0m \x1B[1mIs this right branch/tag? \x1B[22m (y/N): "
+		echo "${BRANCH}"
+		read -qs || { echo " Aborting"; return 1; }
+	fi
+
+	if [[ -d "${REPONAME}/.git" ]]; 
+	then
+		echo -en "$0: $(tput setaf 2 bold)?$(tput setaf 7) It seems like that folder already exists. Continue? $(tput sgr0)(y/N)"
+		if read -qs;
+		then
+			echo " y"
+		else
+			echo " n"
+		   return 1
+		fi
+	else
+		mkdir -vp "${REPONAME}"
+	fi
+	# clear;
+	if [[ -v REPONAME || ! -v BRANCH ]];
+	then
+		git clone --depth 1 --no-tags --single-branch --branch $BRANCH --recurse-submodules "$REPO" "$REPONAME"
+		if [[ "$(pwd)" != "${REPONAME}" ]]
+		then
+			pushd "${REPONAME}"
+			echo "run:"
+			echo "pushd ${REPONAME}"
+		fi
+	else
+		# Use 2> error.log to read the output of the command
+		echo "NO REPONAME or BRANCH specified. Aborting" > /dev/stderr;
+		return 1;
+	fi
+	
+}
+
+main $@
+
+# ex: ft=zsh
