@@ -1,0 +1,13 @@
+#compdef ncdu
+
+local arguments=(
+  '(- *)'{-h,--help}'[print help and exit]'
+ );
+
+ _arguments -C -S $arguments
+ ;
+ return 0
+
+# test foo bar baz
+
+# ex: ft=zsh

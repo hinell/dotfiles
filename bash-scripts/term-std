@@ -1,0 +1,32 @@
+#!/usr/bin/env -S zsh
+# File........: term-std
+# Summary.....: Small script that provides various term capabilites functions 
+# Created.....: October 24, 2023 
+# Authors.....: Alex A. Davronov <al.neodim@gmail.com> (2023-)
+# Repository..: N/A
+# Description.: Provides color functions 
+# Usage.......: Source in bash/zsh 
+
+# The code below declares t_setaf_{1..7}  functions that accept string for higlighting
+# @usage source $(which term-std)
+# @usage t_setaf_0 "TEXT" # fg black
+# @usage t_setaf_2 "TEXT" # fg red
+# @usage t_setab_3 "TEXT" # bg yellow #
+# @usage t_setaf_0 "\${TERM_SETAB_7}This text should be black on white!"
+# @usage t_setab_4 "This text should be in blue!"
+# @usage echo "${TERM_SETAF_7}${TERM_SETAB_5}This text should be in white on pink!${TERM_OP}"
+# @usage echo "${TERM_SETAF_1}This text should be red!${TERM_OP}"
+TERM_OP=$(tput op)
+TERM_SGR0=$(tput sgr0)
+
+# ColorCode: 0 -> black   1 -> red     2 -> green   3 -> yellow  4 -> blue    5 -> magenta 6 -> cyan    7 -> white   
+TERM_SETAF_7="$(set setaf 7)" # - white
+for i in {0..16}; do
+	eval "declare TERM_SETAF_${i}=\"$(tput setaf ${i})\""
+	eval "declare TERM_SETAB_${i}=\"$(tput setab ${i})\""
+
+	eval $(printf 't_setaf_%q(){ echo "%s${1}%s" }' ${i} $(tput setaf ${i}) $(tput op) )
+	eval $(printf 't_setab_%q(){ echo "%s${1}%s" }' ${i} $(tput setab ${i}) $(tput op) )
+done
+
+# ex:filetype=zsh

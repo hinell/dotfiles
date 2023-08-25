@@ -1,0 +1,92 @@
+#!/usr/bin/env -S zsh
+# File........: git-pull-interactive
+# Summary.....: Git pull interactively
+# # Version.....: 1.0.0
+# Created.....: August 21, 2023 
+# Authors.....: Alex A. Davronov <al.neodim@gmail.com> (2023-)
+# Repository..: N/A
+# Description.: ALmost ncurses like ;)
+# Usage.......: Run in shell
+
+git-pull-interactive(){
+
+	command -v whiptail 1> /dev/null || {
+		echo -e "${0}:$(tput setaf 1)fatal$(tput op): whiptail is not found. Aborting." >&2 ;
+		return 1
+	}
+	test -d .git || {
+		echo -e "${0}:$(tput setaf 1)error$(tput op): not a git repo. Use sc-git to scaffold git project. Aborting." >&2 ; 
+		return 1
+	}
+
+	local REMOTES=($(git remote))
+	local REMOTES_PROMPT=()
+	local -i i=2 len=${#REMOTES[@]};
+	REMOTES_PROMPT+=(1 "${REMOTES[1]} $(git remote get-url ${REMOTES[1]})")
+
+	for ((; i <= len; i++)); do 
+		local REMOTE=${REMOTES[$i]}
+		REMOTES_PROMPT+=("$i" "${REMOTE} $(git remote get-url ${REMOTE})")
+	done
+
+	local PULL_TARGET_IDX=$(whiptail \
+		--title "$0" \
+		--notags \
+		--menu "What repo to pull from?" \
+		20 78 4 \
+		${REMOTES_PROMPT[@]} \
+		3>&1 1>&2 2>&3
+	)
+
+	if [[ -z ${PULL_TARGET_IDX} ]];
+	then
+		echo -e "${0}:$(tput setaf 5)info$(tput op): Nothing is selected. Aborting." ;
+		exit 1;
+	fi
+
+	local REMOTE=${REMOTES[${PULL_TARGET_IDX:-1}]}
+	[[ -z ${REMOTE} ]] && { echo -e "${0}:$(tput setaf 5)error$(tput op): REMOTE is not specified. Aborting." ; exit 1; }
+
+	local BRANCHES=()
+	for key in $(git show-ref --heads | cut -d/ -f3); do
+		BRANCHES+=($key)
+		BRANCHES+=($key)
+	done;
+
+	local BRANCH=($(whiptail \
+		--title "$0" \
+		--notags \
+		--menu "Select branchname"\
+		20 78 4 \
+		${BRANCHES[@]} \
+		3>&1 1>&2 2>&3
+	))
+
+	[[ -z "${BRANCH}" ]] && {
+		echo -e "$0: nothing is selected. Aborting."
+		return 1
+	} 
+
+
+	local _GIT_ARG_DEPTH=""
+	# echo -e "$0: \x1B[32m?\x1B[0m\x1B[1m Depth ?\x1B[22m (0 - to omit) (1):"
+	echo -e  "$0: 1 - default value"
+	echo -e  "$0: 0 - omits '--depth' flag"
+	echo -en "$0: git pull $(tput bold) --depth=$(tput sgr0)"
+	read DEPTH
+	if [[ -z "${DEPTH}" ]]; then DEPTH=1 fi
+	if (( ${DEPTH} > 0 )); then
+		_GIT_ARG_DEPTH="--depth=${DEPTH}"
+		echo -e "${0}:$(tput setaf 5)info $(tput sgr0): pulling shallow repo. Use --unshallow to get entire repo."
+	elif (( ${DEPTH} == 0 )); then
+		_GIT_ARG_DEPTH=""
+	fi
+
+	set -vx # debug-start
+	git pull ${_GIT_ARG_DEPTH} --no-tags "${REMOTE}" "${BRANCH}"
+	set +vx # debug-end
+}
+
+git-pull-interactive $@
+
+# ex: ft=zsh

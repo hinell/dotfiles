@@ -1,0 +1,120 @@
+#!/usr/bin/env -S zsh 
+# File........: screencast
+# Summary.....: Screencast X11 window by using ffmpeg (recordmydesktop got dropped)
+# Created-at..: April 05, 2025 
+# Authors.....: Alex A. Davronov <al.neodim@gmail.com> (2025-)
+# Repository..: N/A
+# Usage.......: run in shell
+
+screencast-version(){ echo 1.0.0 }
+screencast-summary(){ echo "Screencast X11 window by using recordmydesktop" }
+
+screencast-help(){
+cat <<-EOL
+	Usage: screencast [OPTIONS] 
+	v$(screencast-version) (April 05, 2025)
+	$(screencast-summary)
+
+	OPTIONS:
+	-v, --version	print script version
+	-h, --help	print help
+	--fps	set fps 
+	EOL
+}
+
+screencast(){
+	set -u # unset vars are reported as error
+	local COMMAND_NAME=screencast
+	local PREFIX=.
+	local -A __FLAGS_MAP=()
+	local __FLAGS_REST=()
+	local __FLAGS=()
+	local __REST=()
+	local _arg_fps
+	while (( $# > 0 )); do
+		case ${1} in
+			(-v|--version)
+				screencast-version
+				return
+			;;
+			(-h|--help)
+				screencast-help
+				return
+			;;
+			(--fps)
+				__FLAGS+=("$1")
+				shift
+				[[ "$1" =~ ^[[:digit:]]+$ ]] || {
+					echo -e "${0}:$(tput setaf 1) error $(tput sgr0) -fs <arg> - number is expected. Aborting." >&2 ;
+					return
+				}
+				_arg_fps=$1
+				shift
+			;;
+			(-*)
+				echo -e "${0}: $(tput setaf 1) error $(tput op) unknown option: ${1}" >&2;
+				return 1
+			;;
+			(*)
+				screencast-help
+				# If you are going to use __REST, remove break
+				# __REST+=("$1")
+				shift
+				break
+			;;
+			# switch.stub
+		esac
+	done;
+
+	command -v ffmpeg 1> /dev/null || {
+		echo -e "${0}:$(tput setaf 1) error $(tput sgr0) ffmpeg is required, but not found!. Aborting." >&2 ;
+	} 
+	# command -v recordmydesktop 1> /dev/null || {
+	# 	echo -e "${0}:$(tput setaf 1) error $(tput sgr0) recordmydesktop is required! Aborting." >&2 ;
+	# } 
+
+	echo -e "${0}:$(tput setaf 5) info $(tput sgr0) this script screencasts a selected window and saves file into " 
+	echo -e "${0}:$(tput setaf 5) info $(tput sgr0) select window" 
+	# INFO=$(xwininfo)
+	# local WIN_ID=$(echo "$INFO" | awk '/Window id:/ {print $4}') 
+	# local WIN_WD=$(echo "$INFO" | awk '/Width:/ {print $2}') 
+	# local WIN_HT=$(echo "$INFO" | awk '/Height:/ {print $2}') 
+	INFO=$(xwininfo -frame)
+	local WIN_ID=$(echo "$INFO" | awk '/Window id:/ {print $4}') 
+	local WIN_GEO=$(echo $INFO | awk '/geometry/ { match($2, /[0-9]{0,4}x[0-9]{0,4}/); split(substr($2,RSTART,RLENGTH),OUT,/x/);print OUT[1]"x"OUT[2] }')
+	local WIN_XY=$(echo $INFO | awk '/Corners:/ { split($2,OUT,/\+/); print OUT[2]","OUT[3]  }')
+
+	# declare -p WIN_GEO 
+	# declare -p WIN_XY
+
+	local REC_FPS=${_arg_fps:-27}
+	local OUT_FILE=recording-$(date +'%Y-%m-%d-%H-%M-%S').mkv
+
+	# ffmpeg -f x11grab -y -framerate ${REC_FPS} -window_id $WIN_ID -video_size ${WIN_GEO} -i :0.0+${WIN_XY} -vcodec ffv1 $OUT_FILE
+	ffmpeg -f x11grab -y -framerate ${REC_FPS} -video_size ${WIN_GEO} -window_id $WIN_ID -draw_mouse 0 -i :0.0 -vcodec ffv1 $OUT_FILE
+
+	echo -e "${0}:$(tput setaf 5) info $(tput sgr0) output: $OUT_FILE"
+	# sleep 3 && recordmydesktop \
+	# 	--no-sound \
+	# 	--no-cursor \
+	# 	--v_quality 63 \
+	# 	--windowid ${WIN_ID} \
+	# 	-x 0 --width ${WIN_WD} \
+	# 	-y 0 --height ${WIN_HT} \
+	# 	--compress-cache --fps ${REC_FPS} \
+	# 	-o vid-$(date +'%Y-%m-%d-%H-%M-%S').ogv
+
+	set +u
+} # screencast
+
+# Run script only if it was directly invoked 
+if [[ ${ZSH_ARGZERO} == $0 ]];
+then
+	screencast "${@}"
+fi
+
+# unset -f screencast-help
+# unset -f screencast-version
+# unset -f screencast
+
+# ex: ft=zsh

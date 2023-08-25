@@ -1,0 +1,114 @@
+# This file is intended to be included into .zshrc
+
+#-----------------------------------------------------------------------keymaps
+export KEYTIMEOUT=80 # hudrendth of a second
+
+# Shortcuts
+# Use emacs keybindings even if our EDITOR is set to vi     • 
+# bindkey -e
+
+test -d "$HOME/.local/share/zsh/hinell" || mkdir -vp "${_}"
+if [[ -s "$HOME/.local/share/zsh/hinell/zle-widgets.zsh" ]]; then
+	# Open nvim in cwd 
+	__keymap_help(){
+
+cat <(cat <<EOL
+the following git widgets are bound by hinell script: 
+
+help:
+  ${TERM_SETAF_3}CTRL+[ ?${TERM_OP}	- show this help
+
+git related:
+  ${TERM_SETAF_2}CTRL+G i ${TERM_OP}	- show git info (log --graph)
+  ${TERM_SETAF_2}CTRL+G s ${TERM_OP}	- show git status
+  ${TERM_SETAF_2}CTRL+G fai${TERM_OP}	- add files interactively (git add --interactive)
+  ${TERM_SETAF_2}CTRL+G rs${TERM_OP}	- git reset all files
+  ${TERM_SETAF_2}CTRL+G se${TERM_OP}	- edit status files (modified & untracked) in current \$EDITOR
+  
+  ${TERM_SETAF_2}CTRL+G br${TERM_OP}	- show git show branches
+  
+  ${TERM_SETAF_2}CTRL+G cob${TERM_OP}	- git checkout branch
+  ${TERM_SETAF_2}CTRL+G cot${TERM_OP}	- git checkout tag 
+  
+  ${TERM_SETAF_2}CTRL+G di${TERM_OP}	- git diff
+  ${TERM_SETAF_2}CTRL+G de${TERM_OP}	- edit diff files relative to HEAD N-revisions back and relative to CWD
+  ${TERM_SETAF_2}CTRL+G sh${TERM_OP}	- git show chnages of HEAD relative to parent (not staged files)
+  
+  ${TERM_SETAF_2}CTRL+G ci${TERM_OP}	- git commit
+  ${TERM_SETAF_2}CTRL+G cia${TERM_OP}	- git commit --amend
+  
+  ${TERM_SETAF_2}CTRL+G pcl${TERM_OP}	- git-clone-interactive
+  ${TERM_SETAF_2}CTRL+G pus${TERM_OP}	- git-push-interactive
+  ${TERM_SETAF_2}CTRL+G pul${TERM_OP}	- git-pull-interactive
+  
+  ${TERM_SETAF_2}CTRL+G cfg${TERM_OP}	- edit config local/global
+  ${TERM_SETAF_2}CTRL+G ovi${TERM_OP}	- open nvim editor
+
+editors: 
+  ${TERM_SETAF_2}CTRL+O vi${TERM_OP}	- open nvim-x (xterm neovim)
+  ${TERM_SETAF_3}CTRL+E CTRL+X${TERM_OP}	- edit script & put into readline content to be run
+
+  ${TERM_SETAF_2}CTRL+F ls${TERM_OP}	- list files in current working directory
+  ${TERM_SETAF_2}CTRL+F ll${TERM_OP}	- list files (long) 
+  ${TERM_SETAF_2}CTRL+F cp${TERM_OP}	- list files to copy to clipboard (fzf)
+
+readline:
+  ${TERM_SETAF_2}CTRL+Right${TERM_OP}	- jump word to the right
+  ${TERM_SETAF_2}CTRL+Left ${TERM_OP}	- jump word to the left
+
+EOL
+) <(bindkey) | less -SRC
+
+}
+
+	zle -N _keymap_help __keymap_help
+	bindkey '^[?'	_keymap_help
+	# this is actually clone of bash's edit-and-execute-command
+	bindkey '^e^x'	edit-and-execute-command
+
+	# git related:
+	source "$HOME/.local/share/zsh/hinell/zle-widgets.zsh"
+	bindkey '^gi'    _git_info
+	bindkey '^gs'    _git_status
+	bindkey '^gse'   _git_status_files_edit
+	bindkey '^gbr'   _git_branches
+	bindkey '^gcob'  _git_co_branch
+	bindkey '^gcot'  _git_co_tag
+	bindkey '^gfai'  _git_add
+	bindkey '^grs'   _git_reset
+	bindkey '^gdi'   _git_diff
+	bindkey '^gde'   _git_diff_edit
+	bindkey '^gsh'   _git_show
+	bindkey '^gci'   _git_commit
+	bindkey '^gcia'  _git_commit_amend
+
+	bindkey '^gcl'  _git_clone_interactively
+	bindkey '^gpul' _git_pull_interactively
+	bindkey '^gpus' _git_push_interactively
+
+	bindkey '^gcfg' _git_config_edit
+	bindkey '^ovi'  _nvim_open
+
+	# editor
+	bindkey '^fls'  _os_fs_ls 
+	bindkey '^fll'  _os_fs_lsr_v
+	command -v fzf 1> /dev/null && bindkey '^fcp'  _os_fs_ls_clip_cp	
+
+	# readline
+	# These are ASCII code escapes used for TTY
+	bindkey "^[[1;5C" forward-word		# CTRL+Right
+	bindkey "^[[1;5D" backward-word		# CTRL+Left
+
+	# See .Xresources for Xterm-sent keybindigns
+	# They are also configured inside Konsole settings (profile tab)
+	# bindkey '^[[27;6;8~'  backward-delete-word # CTRL+SHIFT+BackSpac
+	# bindkey '^[[27;6;10~' backward-delete-word # CTRL+SHIFT+BackSpace
+	bindkey '^H' backward-kill-word  # CTRL+SHIFT+BackSpace
+	bindkey '^[[3;5~' kill-word      # CTRL+DEL
+
+else
+	echo -e "${0}:$(tput setaf 1)error:$(tput op): can't fetch hinell zle widgets from ${_}, please, stow dotfiles!" > /dev/stderr; 
+fi
+
+
+# ex: ft=zsh

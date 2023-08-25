@@ -1,0 +1,13 @@
+\.stowrc
+# Git
+\.git/
+\.git.*
+# Docs
+.*\.md
+.*/doc/
+^/LICENSE.*
+^/RELEASE.*
+^/README.*
+^/COPYING# Nvim
+Session.vim
+\.nvim\.lua

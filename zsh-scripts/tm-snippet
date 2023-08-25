@@ -1,0 +1,155 @@
+#!/usr/bin/env -S zsh
+# Title.......: tm-snippet
+# Summary.....: A wrapper around jq to get Textmate snippet body from VS Code json files 
+# Created.....: June 29, 2023
+# Authors.....: Alex A. Davronov <al.neodim@gmail.com> (2023-)
+# Repository..: N/A
+# Description.: Extract parts of a snippet from VS Code texmate-snippet json files and edit
+# Historically, a similar script was created on October 29, 2022; it wasn't a standalone one. 
+# Usage.......: tm-snipppet -h
+tm-snippet-version(){ echo 1.1.2 ; }
+# @summary Print tool's help
+tm-snippet-help(){
+	echo "Usage: tm-snippet FILE SNIPPET[.PATH] [COMMAND]"
+	echo "Get texmate-snippet declarations from JSON files used for VS Code. jq is required"
+	echo
+	echo "FILE is a valid .json file and is initially searched in the home directory for VS Code snippets."
+	echo "the specified SNIPPET (subfield) of the json file. If FILE is (-) dash, then stdin is used."
+	echo
+	echo "This tool requires jq to be installed on your system."
+	echo
+	echo "COMMAND"
+	echo 
+	echo "	get  - default; print json"
+	echo "	join - get raw subfield content of the texmate snippet (array expected)"
+	echo "	edit - edit isolated SNIPPET value (json or string) from FILE in \$EDITOR \n"
+	echo
+	echo "Options:"
+	echo "\t-v, --version\tprint version number"
+	echo "\t-h, --help\tprint help"
+	echo "\t    --man\tproduce man file to file tm-snippet.1"
+	echo
+	echo "Examples:"
+	echo " Given the xxx.json file:"
+	echo
+	echo " { \"foo one\": { \"prefix\": \"\", \"description\": \"...\"," "body\": [ \" ... \" ] }, ... }"
+	echo 
+	echo " Run the following:" 
+	echo 
+	echo "\t tm-snippet xxx.json '.[\"foo one\"]'.body at   # to get raw text of the body\n"
+	echo "\t tm-snippet xxx.json '.[\"foo one\"]'.body edit # to edit json piece in \$EDITOR\n"
+	echo "\t tm-snippet xxx.json '.[\"foo one\"]'      join-edit # to edit value of array \$EDITOR\n"
+	echo 
+	echo "Copyright (C) 2023- Alex A. Davronov <al.neodim@gmail.com>"
+	echo "This program comes with ABSOLUTELY NO WARRANTY; for details type $ tm-snippet -h."
+	echo "This is free software, and you are welcome to redistribute it"
+	echo "under certain conditions;"
+}
+
+# ----------------------------------------------------------------main
+# @summary tm-snippet entry point
+# @created Friday, September 9, 2022
+# @usage  $ main
+# @param inputFile   - Name of the snippet file (json) 
+# @param snippetName - Name of the snippet subfield in the input file
+# @param command     - join (to get raw string), edit (edit)
+tm-snippet()
+{
+	# Parse options
+	#-------------------------------------
+	case "${1}" in
+		(-v|--version)
+			tm-snippet-version
+			return
+		;;
+		(--man)
+			local outManFile=tm-snippet.1
+			help2man -n "get texmate snippet info from VS Code JSON files" -o ${outManFile}  tm-snippet
+			echo "${outManFile} is written"
+			return
+		;;
+		(-h|--help)
+			tm-snippet-help
+			return
+		;;
+	esac
+
+	local inputFile=${1:?"File name is required!"}
+	local jqJsonPath=${2:?"jq path is required!"}
+	local subCommand=${3}
+	local UserVSCodeSnippetsPATH="${HOME}/.config/Code/User/snippets/"
+	local DotfilesVSCodeSnippetsPATH="${HOME}/dotfiles/vscode/User/snippets/"
+	local inputFilePath="${inputFile}"
+	# On my machine the VSCode snippets path may fail
+	# cause the HDD is mounted on different dir/ point
+	# [[ -d "${UserVSCodeSnippetsPATH}" ]] || local inputFilePath="${UserVSCodeSnippetsPATH}${inputFile}"
+	# [[ -d "${DotfilesVSCodeSnippetsPATH}" ]] || local inputFilePath="${DotfilesVSCodeSnippetsPATH}${inputFile}"
+	[[ -f ${inputFilePath} ]] ||\
+	{
+		# Use 2> error.log to read the output of the command
+		echo "$0: \x1B[31merror:\x1B[0m ${inputFilePath} file is not found" > /dev/stderr;
+		echo "Aborting." > /dev/stderr;
+		exit 1
+	}
+	[[ -z "${subCommand}" ]] &&\
+	{
+		echo "$0: \x1B[31merror:\x1B[0m  command is required. Aborting." > /dev/stderr;
+		tm-snippet-help
+		return 1
+	}
+
+	# set -vx # debug-start
+	# : ${inputFilePath} 
+	# : ${jqJsonPath[@]}
+	# : ${subCommand}
+	# set +vx # debug-end
+
+	case "${subCommand}" in
+		('.');&
+		(at|get)
+			# jq -f <( echo -n "."; printf '["%s"]' "${jqJsonPath[@]}") "${inputFilePath}"
+			jq -f <(echo "${jqJsonPath}") "${inputFilePath}"
+			return $?
+		;;
+		(edit)
+			local tmpFilePath=$(mktemp)
+			if [[ -z "$EDITOR" ]] && EDITOR=cat
+			# jq -j -f <(echo -n "."; printf '["%s"]' "${jqJsonPath[@]}") "${inputFilePath}" > "${tmpFilePath}"
+			jq -j -f <(echo "${jqJsonPath}") "${inputFilePath}"
+			"$EDITOR" "${tmpFilePath}";
+			return $?
+		;;
+		(join)
+			# jq -j -f <(echo -n "."; printf '["%s"]' "${jqJsonPath[@]}"; echo '| join("\n")') "${inputFilePath}"
+			jq -j -f <(echo "${jqJsonPath} | join(\"\n\")") "${inputFilePath}"
+			return $?
+		;;
+		(join-edit)
+			test -d /tmp/tm-snippet/ || mkdir -vp $_
+			local tmpFilePath="/tmp/tm-snippet/$(base64 <<<$(basename ${inputFilePath})-${jqJsonPath}).txt"
+			[[ -z "$EDITOR" ]] &&\
+			{
+				EDITOR=cat
+				echo "$0: warning: no \$EDITOR; cat is used"
+			}
+			# Always rewrite existing file
+			jq -j -f <(echo "${jqJsonPath} | join(\"\n\")") "${inputFilePath}" > "${tmpFilePath}"
+
+			echo "${tmpFilePath}"
+			"$EDITOR" "${tmpFilePath}";
+			return $?
+		;;
+		(*)
+			echo "$0: \x1B[31merror:\x1B[0m unknown command."
+			echo
+			eval "tm-snippet-help"
+			return 1
+		;;
+		# switch.stub
+	esac
+
+
+} # main end
+tm-snippet "$@"
+
+# ex:ft=zsh

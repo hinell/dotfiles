@@ -1,0 +1,336 @@
+# TODO: [December 05, 2023] Move to a separate script
+# --------------------------------------------------------------------User-Tasks
+# Housekeeping utilities
+
+# This is a conveience for storing help
+# The left variable has a new-line delimited values of the right
+typeset -T userTasksHelpList userTasksHelpListArr=() $'\n';
+
+# Update mdn docs
+userTasksHelpListArr+=("mdn.docs.update - Update MDN docs")
+usertasks.mdn.docs.update(){
+	local MDN_CONTENT_PATH=/media/all/ProgramsAndGames/pr/Devdocs/MDN/content;
+	path.exists $MDN_CONTENT_PATH || { return 1; };
+	[[ "$MDN_CONTENT_PATH" == "$(pwd)" ]] || pushd $MDN_CONTENT_PATH
+	local DEPTH=1
+	clear;
+	echo "\x1B[32m$0\x1B[0m: updating MDN docs by git (depth: 1)"
+	git checkout main
+#   git fetch --depth=1 --no-tags --recurse-submodules github;
+	git pull --depth=${DEPTH} --no-tags --recurse-submodules --ff  github main 
+	git reset --hard github/main || {
+		# Use 2> error.log to read the output of the command
+		echo "\x1B[31mError: \x1B[0m git reset has failed! Aborting." > /dev/stderr;
+		return 1;
+	}
+
+	git checkout scripts;
+
+	# Check if already have rebased onto the main branch
+	if [[ ! 1 -eq $(git rev-list --count main) ]];
+	then
+		# NOTE: You can't push from shallow
+		# git push origin main
+		git rebase --onto=main scripts~ scripts;
+	fi
+	echo -e "$0: $(tput setaf 2 bold)?$(tput setaf 7) .nvmrc - overwrite by current node.js version ? $(tput sgr0)(y/N)"
+	if read -qs;
+	then
+	  node -v > .nvmrc
+	fi
+	npm install;
+}
+
+# --------------------------------------------------------usertasks.mdn.docs.run
+# mdn.docs.run() - run MDN doc instance at localhost:5000;
+userTasksHelpListArr+=("\x1B[;38;2;127;100;100mmdn.docs.run \x1B[0m - Run MDN docs server")
+usertasks.mdn.docs.run(){
+
+	local MDN_CONTENT_PATH=/media/all/ProgramsAndGames/pr/Devdocs/MDN/content;
+	path.exists $MDN_CONTENT_PATH || { return 1; };
+	[[ "$MDN_CONTENT_PATH" == "$(pwd)" ]] || pushd $MDN_CONTENT_PATH
+	path.exists ./scripts/start.sh || { return -1; };
+
+	source <(bash ./scripts/start.sh --config)
+	path.exists $MDN_CONTENT_PATH || { return 1; };
+	pushd $MDN_CONTENT_PATH
+	[[ -f $MDN_SCRIPT_PATH ]] || {
+		echo "\x1B[31mError: \x1B[0m" > /dev/stderr;
+		echo "${MDN_SCRIPT_PATH} is NOT found." > /dev/stderr;
+		echo "Git reset has probably failed!" > /dev/stderr;
+		return 1;
+	};
+	
+	clear;
+	EDITOR=kate PATH=$PATH $MDN_SCRIPT_PATH
+}
+
+# -------------------------------------------------------usertasks.mdn.docs.stop
+# mdn.docs.stop() - stop the last run MDN doc instance
+userTasksHelpListArr+=("\x1B[;38;2;127;100;100mmdn.docs.stop \x1B[0m - Run MDN docs server")
+# @summary I'm stopping running MDN Yari instance
+# @usage  $ usertasks.mdn.docs.stop
+usertasks.mdn.docs.stop()
+{
+
+	source <(bash scripts/start.sh --config)
+	path.exists $MDN_CONTENT_PATH || { return -1 }
+	pushd $MDN_CONTENT_PATH
+
+	echo "Stopping yari MDN server."
+	kill $(cat /tmp/mdn_docs_server_pid.txt);
+	echo "\x1B[32m✓ Done\x1B[0m"
+}
+
+# NVM sh update node to the latest version
+userTasksHelpListArr+=("nvm.nodesjs.update - Update Node.js verion to the latest")
+usertasks.nvm.nodesjs.update(){
+	clear;
+	
+	LNV=$(nvm current);
+	echo "Is the ${LNV} being the latest installed node version? (Y/n)"
+	if read -qs;
+	then
+		echo 'nvm.nodes.update: aborting'
+		echo '  Run nvm ls to find the latest installed verion'
+		nvm install node --reinstall-packages-from=$LNV 
+		nvm cache clear
+		node --version
+	else
+		echo "Current Node.js version:"
+		node --version
+		echo "Aborting."
+	fi;
+}
+
+# Update nvm itself
+userTasksHelpListArr+=("nvm.nvm.update - Update nvm it self");
+usertasks.nvm.update(){
+	clear;
+	[[ -v NVM_DIR && -d ${NVM_DIR} ]] || {
+		echo -e "${0}:$(tput setaf 3)warn:$(tput op): nvm is not found in the ${NVM_DIR}. Aborting." > /dev/stderr; 
+		return 1
+	}
+	
+	# Remove unused tags
+	pushd $NVM_DIR
+	local nvmTags=($(git tag)); 
+	git tag -d  "${nvmTags[@]:0:-1}"
+
+	for dependecyBin in gh awk; do
+		command -v ${dependecyBin} &> /dev/null || {
+			# github cli https://cli.github.com/
+			echo '${dependecyBin} tool is required, please install';
+			return 1;
+		};
+		
+	done
+	
+	# Populate list of available releases versios
+	# ( v0.39.1 v0.39.0 v0.38.0 )
+	local nvmReleases=($(gh release list -L 5  -R nvm-sh/nvm | cut -d $'\t' -f 1));
+	# local ghReleaseListEntry=();
+#
+# 	while read -r item;
+# 	do
+# 		# ${= ... - This means to split a string
+# 		IFS=$'\t' ghReleaseListEntry=(${=item});
+# 		nvmReleases+=(${ghReleaseListEntry[1]});
+# #   done < <(cat /tmp/gh.release.output.txt) \
+# 	done < <(gh release list -L 5  -R nvm-sh/nvm) || {
+# 		echo "nvm.update: error: gh failed!";
+# 		return 0;
+# 	}
+	
+	# https://www.gnu.org/software/bash/manual/html_node/Bash-Conditional-Expressions.html#Bash-Conditional-Expressions
+	if [[ ${#nvmReleases[@]} -eq 0  ]];
+	then
+		echo "$0: \x1B[31merror: \x1B[0m: gh either failed or fetched no versions!";
+		return
+	fi
+	
+	local nvmVersion="v`nvm --version`";
+	# Check if the lates update 
+	if [[ "${nvmVersion}" == "${nvmReleases[1]}" ]]
+	then
+		echo "$0: the latest nvm version ${nvmVersion} is already installed, aborting";
+		return;
+	fi
+
+
+	# This is erroneous syntax that breaks Bash IDE
+	# See https://github.com/bash-lsp/bash-language-server/issues/539
+	# Use print -l instead
+	# echo "${(F)nvmReleases[@]}"
+	local PS3="$0: please, specify version: ";
+	select VER in ${nvmReleases[@]};
+	do
+		echo "$0: selected version: $VER"
+		break
+	done
+
+	setopt RE_MATCH_PCRE
+	vre=$'^v0.\\d{1,2}\.\\d{1,2}$'
+	if [[ ! "$VER" =~ $vre ]];
+	then
+		echo "$0: \x1B[31merror: \x1B[0m"
+        echo "   Invalid version $VER . Expected version:"
+        echo "   Starting with 'v' prefix."
+        echo "   In the format 0.XX.XX"
+        # declare -p $match
+		return 1;
+	fi
+	unsetopt RE_MATCH_PCRE
+	
+  	echo "$0: about to install \x1B[1m$VER \x1B[22m"
+	[[ $VER ]] && curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/$VER/install.sh | bash;
+	
+	popd 
+}
+
+# Update TPLink driver
+userTasksHelpListArr+=("tplink.update - Update TPLink driver")
+usertasks.tplink.update(){
+	# TP-link.rtl8188eu.install()
+	local _path="/media/all/ProgramsAndGames/Downloads/Software.x86.x64.Drivers/TP-Link_WiFiAdapter/rtl8188eu.fork"
+	path.exists $_path || { return 1; };
+	pushd $_path; 
+	
+	git fetch --no-tags --depth=1 origin;
+	git reset --hard origin/master;
+	make clean;
+	make all;
+	sudo make install;
+	popd
+}
+
+
+# Update Node.js docs
+userTasksHelpListArr+=("\x1B[32mnodejs.docs.update \x1B[0m - Update Node.js docs")
+usertasks.nodejs.docs.update(){
+	local _path=/media/all/ProgramsAndGames/pr/2015/node.fork;
+	path.exists $_path || { return 1; };
+	pushd $_path
+	
+	clear;
+	# git fetch --no-tags --depth 1 origin main;
+	# git reset --hard origin/main;
+	make doc-only PYTHON=$(which python3);
+	popd
+}
+
+# Build CMake docs
+userTasksHelpListArr+=("cmake.docs.build - Update CMake docs")
+usertasks.cmake.docs.build(){
+
+	local l="Utilities/Sphinx/";
+	local _path="/media/all/ProgramsAndGames/pr/2020/cmake.fork/";
+	path.exists $_path || { return 1; };
+	[[ "${_path}" = "$(pwd)" ]] || pushd ${_path} ;
+	 
+	
+	if [[ ! -d "${_path}/${SPHINXPATH}" ]];
+	then
+		# Use 2> error.log to read the output of the command
+		echo "No path ${_path} is found" > /dev/stderr
+		return 1
+	fi
+
+	clear;
+	# git fetch --no-tags --depth 1 upstream master;
+	git pull --no-tags upstream master;
+	# git reset --hard upstream/main;
+
+	echo "You may also use the following command to build files"
+	echo "\t$ sphinx-build -c Utilities/Sphinx ./Help/ ./Utilities/Sphinx/.build/html/"
+
+	cmake -S "${SPHINXPATH}" -B "${SPHINXPATH}/.build/" -G Ninja \
+		-DSPHINX_HTML=TRUE \
+		-DCMAKE_INSTALL_PREFIX="/usr/share/doc/cmake-data" \
+		-DCMAKE_DOC_DIR="./"
+
+	cmake --build "${SPHINXPATH}.build";
+
+	echo "Install build docs? (Y/n)"
+	read -qs && sudo cmake --install "${SPHINXPATH}.build"
+	
+	popd
+}
+
+userTasksHelpListArr+=("zsh.completions.update - Update zsh completions")
+usertasks.zsh.completions.update(){
+	local ZSHCOMPLETIONS_PATH="$HOME/.zsh/zsh-completions";
+	path.exists $ZSHCOMPLETIONS_PATH || { return 1; };
+	
+	pushd $ZSHCOMPLETIONS_PATH;
+	#Get remote name
+	local rems=($(git rem));
+	git pull --no-tags --depth 1 ${rems[1]} master;
+	git checkout master;
+	git reset --hard ${rems[1]}/master;
+	popd;
+}
+
+# Last modified on November 21, 2023
+userTasksHelpListArr+=("\x1B[32mgit.docs.upd \x1B[0m - Update git scm repository; install docs")
+usertasks.git.docs.upd(){
+
+	test -f "${PWD}/git.c" || {
+		echo -e "${0}:$(tput setaf 1)error$(tput op): not a git repo!. Aborting." >&2 ; 
+		return 1
+	}
+
+	echo -e "${0}:$(tput setaf 5)info$(tput op): updating git master branch (depth = 1)"
+	local rems=($(git rem));
+	git pull --no-tags --depth 1 ${rems[1]} master;
+	git checkout master;
+	git reset  --hard ${rems[1]}/master;
+
+	echo -e "${0}:$(tput setaf 5)info$(tput op): applying patch"
+	git br -D asciidoc
+	local GIT_ASCCIDOCTOR_PATCH_PATH="/media/all/ProgramsAndGames/pr/Devdocs/git.asciidoctor.patch.diff"
+	test -f "${GIT_ASCCIDOCTOR_PATCH_PATH}" || {
+		echo -e "${0}:$(tput setaf 1)error$(tput op): ascciidoctor patch is not found in " >&2 ; 
+		echo -e "${0}: ${GIT_ASCCIDOCTOR_PATCH_PATH}." >&2 ;
+		echo -e "${0}: Aborting." >&2 ;
+		return 1
+	}
+	
+	git apply "${GIT_ASCCIDOCTOR_PATCH_PATH}" || {
+		echo -e "${0}:$(tput setaf 1)error$(tput op): ${GIT_ASCCIDOCTOR_PATCH_PATH} - patch application failed. Aborting.">&2 ; 
+		return 1
+	}
+
+	git add $(fgrep '+++ ' "${GIT_ASCCIDOCTOR_PATCH_PATH}" | cut -d '/' -f 2-)
+	git checkout -b asciidoc
+	git ci -m "feat(doc): add asciidoctor; use custom theme"
+
+	echo -e "${0}:$(tput setaf 2)ok$(tput op): patch successfully applied"
+	# if git rev-parse asciidoc 2> /dev/null;
+	# then
+	#   git checkout asciidoc 
+	# 	git rebase master;
+	# fi
+
+	# make -C Documentation clean;
+	# make -C contrib/subtree clean;
+
+	echo -e "${0}:$(tput setaf 5)info$(tput op): building & installing docs."
+	time sudo make -C Documentation/ install-html
+	time sudo make -C contrib/subtree install
+}
+
+#----------------------------------------------------------------software-check
+usertasks.help(){
+	echo
+	echo "Available tasks help"
+        local report=""
+	for helpentry in "${userTasksHelpListArr[@]}";
+	do
+            report+="$(echo ${helpentry})\n"
+            # echo "\t $helpentry"
+	done
+	echo "$report" | column -s '-' -o '-' -t 
+	echo "See also: ~/.bash/system-dependencies-boostrap.sh"
+
+}

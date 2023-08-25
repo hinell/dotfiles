@@ -1,0 +1,116 @@
+#!/usr/bin/env -S bash 
+# Summary.....: git push --force personal submodules into repo
+# Created-at..: May 16, 2025 
+# Authors.....: Alex A. Davronov <al.neodim@gmail.com> (2025-)
+# Repository..: N/A
+# Description.: 
+# Usage.......: Intended to be used in 'git submodule foreach <command>'  command
+
+git-push-cli-version(){ echo 1.0.0 ; }
+git-push-cli-summary(){ echo "Force-push every git submodule from current repo folder" ; }
+
+git-push-cli-help(){
+	echo -e "Usage: git-push [OPTIONS] COMMAND"
+	echo -e "v$(git-push-cli-version) (May 16, 2025)"
+	echo -e "$(git-push-cli-summary)"
+	echo -e ""
+	echo -e "COMMANDS:"
+	echo -e " run - run updating sub-script; see examples "
+	echo -e ""
+	echo -e "OPTIONS:"
+	echo -e " -C PATH specifies current working directory path"
+	echo -e " -v, --version	print script version"
+	echo -e " -h, --help	print help"
+	echo -e ""
+	echo -e "EXAMPLE"
+	echo -e " $ git-push-cli # run in current repo folder"
+	echo -e " or"
+	echo -e " $ git submodule foreach 'git-push-cli run'"
+}
+
+# @summary Summary
+git-push(){
+	set +u
+	if [[ -z $toplevel ]];
+	then
+		echo -e "${0}:$(tput setaf 1) error $(tput sgr0) this function intended to be run only under 'git submodule foreach'. Aborting." >&2 ;
+		exit 0
+	fi
+
+	set -u
+	GIT_CURRENT_REPO=$(git remote get-url origin)
+	GIT_USER_NAME=$(git config --get user.name) 
+
+	if [[ -z $GIT_USER_NAME ]];
+	then
+		echo -e "${0}:$(tput setaf 1) error $(tput sgr0) Git username is not set by 'git config'. Aborting." >&2 ;
+	else
+		if [[ $GIT_CURRENT_REPO =~ $GIT_USER_NAME ]];
+		then
+			echo "$GIT_CURRENT_REPO"
+			git push -f origin main
+		else
+			exit 0
+		fi 
+	fi;	
+}
+
+git-push-cli(){
+	set -u # unset vars are reported as error
+	local COMMAND_NAME=git-push-cli
+	local PREFIX=.
+	for	arg; do
+		case ${1} in
+			(-v|--version)
+				git-push-cli-version
+				return
+			;;
+			# switch.stub
+			(-h|--help)
+				git-push-cli-help 
+				return
+				;;
+			(run)
+				git-push
+				return
+				;;
+
+			# parse flags & actions
+			# switch.stub
+
+			(-*|--*)
+				echo -e "${0}:$(tput setaf 1) error $(tput op) unknown flag: ${1} Aborting." >&2;
+				git-push-cli-help 
+				return 1
+				;;
+
+		esac
+	done
+
+	# parse provided data input
+	# local _context=${1:?context is required} 
+	# local _param=${2:?second parameter is required}
+	# 
+	# # don't forget to update count of pop-ed args!
+	# shift 2
+	if (( $# > 0 ));
+	then
+		git-push-cli-help 
+		return 1
+	else
+		git submodule foreach 'git-mod-push run'
+	fi
+
+	set +u
+} # git-push-cli
+
+# Run script only if it was directly invoked 
+if [[ ${BASH_SOURCE[0]} == $0 ]];
+then
+	git-push-cli "${@}"
+fi
+
+# unset -f git-push-help
+# unset -f git-push-version
+# unset -f git-push
+# ex: ft=zsh

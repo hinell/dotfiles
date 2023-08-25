@@ -1,0 +1,72 @@
+#!/usr/bin/env -S zsh
+# File........: git-push-interactively.zsh 
+# Summary.....: Force push git refs interactively 
+# Created.....: November 26, 2023 
+# Authors.....: Alex A. Davronov <al.neodim@gmail.com> (2023-)
+# Repository..: N/A
+# Description.: See summary
+# Usage.......: Run in shell
+
+git-push-force-interactive(){
+
+	command -v whiptail 1> /dev/null || {
+		echo -e "${0}:$(tput setaf 1)fatal$(tput op): whiptail is not found. Aborting." >&2 ;
+		return 1
+	}
+	test -d .git || {
+		echo -e "${0}:$(tput setaf 1)error$(tput op): not a git repo. Use sc-git to scaffold git project. Aborting." >&2 ; 
+		return 1
+	}
+
+	local REMOTES=($(git remote))
+	local REMOTES_PROMPT=()
+	local -i i=2 len=${#REMOTES[@]};
+	REMOTES_PROMPT+=(1 "${REMOTES[1]} $(git remote get-url ${REMOTES[1]})")
+
+	for ((; i <= len; i++)); do 
+		local REMOTE=${REMOTES[$i]}
+		REMOTES_PROMPT+=("$i" "${REMOTE} $(git remote get-url ${REMOTE})")
+	done
+
+	local PUSH_TARGET_IDX=$(whiptail \
+		--title "$0" \
+		--notags \
+		--menu "What repo to --force push to?" \
+		20 78 4 \
+		${REMOTES_PROMPT[@]} \
+		3>&1 1>&2 2>&3
+	)
+
+	if [[ -z ${PUSH_TARGET_IDX} ]];
+	then
+		echo -e "${0}:$(tput setaf 5)info$(tput op): Nothing is selected. Aborting." ;
+		exit 1;
+	fi
+
+	local REMOTE=${REMOTES[${PUSH_TARGET_IDX:-1}]}
+	[[ -z ${REMOTE} ]] && { echo -e "${0}:$(tput setaf 5)error$(tput op): REMOTE is not specified. Aborting." ; exit 1; }
+
+	local BRANCH_CURRENT=$(git branch --show-current)
+	local BRANCHES=($(git for-each-ref --format='%(refname:lstrip=2)' refs/heads))
+
+	local BRANCHES_TO_PUSH=("$BRANCH_CURRENT")
+	# filter out current branch first 
+	for BRANCH in ${BRANCHES[@]}; do
+		if [[ "${BRANCH}" != "${BRANCH_CURRENT}" ]]; then
+			BRANCHES_TO_PUSH+=("${BRANCH}")
+		fi
+	done
+
+	for BRANCH in ${BRANCHES_TO_PUSH[@]}; do
+		echo -en "$0: $(tput setaf 2 bold)?$(tput setaf 7)  $BRANCH ➔ ${REMOTE}/$BRANCH ↑ - force push ? $(tput sgr0)(y/N)"
+		if read -qs;
+		then
+			echo -e " $(tput setaf 2)✔$(tput op)"
+			git push -f ${REMOTE} $BRANCH 
+		else
+			echo -e " $(tput setaf 3)❌$(tput op)"
+		fi
+	done
+}
+
+git-push-force-interactive "${@}"

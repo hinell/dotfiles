@@ -1,0 +1,284 @@
+[core]
+	; editor = kate -b
+	editor = nvim-x
+	autocrlf = input
+	untrackedCache = true
+	; excludesfile = /home/alex/.gitignore
+    #  editor = notepad++.exe
+	# comment for use default editor
+[gui]
+[merge]
+	# vimdiff
+	# tool = notepad++.exe
+	tool = nvim-x 
+
+[mergetool]
+	# see related post on this flag
+	# https://www.eseth.org/2020/mergetools.html
+	hideResolved  = true
+
+
+[mergetool "nvim-x"]
+	# See /usr/lib/git-core/mergetools/vimdiff
+	# for details
+	path = ~/.local/bin/
+	cmd=nvim-x -c "set hidden diffopt-=hiddenoff | echo | leftabove vertical split | 1b | wincmd l | 2b | execute 'tabdo windo diffthis' | tabfirst" "$LOCAL" "$REMOTE" "$MERGED" 
+
+[difftool "nvim-x"]
+	# See /usr/lib/git-core/mergetools/vimdiff
+	path = ~/.local/bin/
+	; cmd = nvim-x -R -f -d -c 'wincmd l' -c 'cd $GIT_PREFIX' "$LOCAL" "$REMOTE"
+	cmd = nvim-x -f -d -c 'wincmd l' -c 'cd $GIT_PREFIX' "$LOCAL" "$REMOTE"
+	; cmd = nvim-x -R -d -c 'wincmd l' -c 'cd $GIT_PREFIX' -c "DiffviewOpen"
+	trustExitCode = true
+
+[diff]
+	tool = nvim-x
+	# tool = notepad++.exe
+[gui]
+[credential]
+	# This is only for windows!
+	helper = wincred
+[user]
+	name = hinell
+	email = al.neodim@gmail.com
+
+[format]
+[color]
+	diff = auto
+	status = auto
+	branch = auto
+
+[alias]
+	c = clone
+	chrr = cherry-pick
+
+	# Add different categories of files
+	add-deleted   = !git st -s ./ | grep -P '[D ][D ] ' | sed -E 's/[ D][ D] //' | xargs git add && echo 'Git: added all deleted fiels'
+	add-modified  = !git st -s ./ | grep -P '[M ][M ] ' | sed -E 's/[ M]?[ M] //' | xargs git add  && echo 'Git: added all modified fiels'
+	add-untracked = !git st -s ./ | grep '?? ' | sed 's/?? //' | xargs git add && echo 'Git: added all untracked fiels'
+
+	a = add
+	s = stage
+	i = init
+
+	co = checkout
+	sw = switch
+	###########################################################################
+	sh  = show --stat
+
+	###########################################################################
+	br   = branch
+	brd  = branch --delete
+	brmv = branch --move
+	brsh = show-branch
+	brls = for-each-ref --format='%(refname:lstrip=2)' refs/heads
+
+	st = status --show-stash --renames
+
+	ss   = stash
+	ssll = stash list
+	ssls = stash list
+	sssh = stash show
+	ssdr = stash drop
+	ssrm = stash drop
+	sspu = stash push
+	sspo = stash pop
+	ssap = stash apply
+	ssbr = stash branch
+	sscl = stash clear
+	sscr = stash create
+	ssst = stash store
+
+	rem = remote
+	cfg = config
+
+	###########################################################################
+	sme = !echo "$(tput setaf 5)info$(tput op): Deprecated in favor of git mfo"
+	sm  = !echo "$(tput setaf 5)info$(tput op): Deprecated in favor of git mod"
+
+	mod = submodule
+	mad = submodule add
+	mst = submodule status
+	min = submodule init
+	mde = submodule deinit
+	mup = submodule update
+	mse = submodule set
+	mse = submodule set
+	msu = submodule summary
+	mfo = submodule foreach
+	msy = submodule sync
+	mab = submodule absorbgitdirs
+
+    ###########################################################################
+	# Logging
+	# info = "!git log --decorate=auto --graph --oneline"
+	logr = log --graph --format='%Cred %h%Creset %s %Cgreen%cr%Creset'
+	info = log --decorate=auto --graph --oneline
+	l    = log -1
+
+	###########################################################################
+	# Diffing
+	di   = diff
+	dt   = difftool 
+	dft  = diff-tree
+
+	############################################################################	
+	# Rebasing 
+	rb = rebase
+
+	# Merging
+	mt = mergetool 
+	mr = merge
+
+	# Fetch GitHub/Gitlab pull request 
+	# Usage: git pull-pr-xy <PRID>
+	# Usage: git pull-pr-xy <PRID> [<remote>]
+	fetch-pr-gh= "!_() { git fetch --no-ff ${2:-origin} refs/pull/${1:?PR ID is missing}/head; };_"
+	fetch-pr-gl= "!_() { git fetch --no-ff ${2:-origin} refs/merge-requests/${1:?PR ID is missing}/head; };_"
+
+	tags = info --simplify-by-decoration
+	# Only on windows
+	self-update = !command -v update-git-for-windows && update-git-for-windows
+    # cz ="!./node_modules/.bin/git-cz"  # <-- THIS WILL NOT WORK IF WE ARE NOT IN ROOT OF REPO
+	# cz ="!npx git-cz"
+
+	###########################################################################
+	ci   = commit
+	cia  = commit --amend
+	csq  = commit --squash=@
+	cf   = commit --fixup=@ 
+
+	###########################################################################
+	rs = reset
+	rsh = reset --hard
+
+	###########################################################################
+	wad = worktree add
+	wls = worktree list
+	wmv = worktree move
+	wrm = worktree remove
+	wpr = worktree prune
+	wre = worktree repair
+	wlo = worktree lock
+	wun = worktree unlock
+
+	###########################################################################
+	sb = subtree
+
+[pull]
+	ff=only 
+[push]
+	default = matching
+[rebase]
+	autoSquash = true
+[rerere]
+	enabled = false
+
+[pager]
+	# Don't paginate short output 
+	log    =  true
+	branch =  true
+	stat   =  true
+	status =  true
+[help]
+	autoCorrect = 1
+    browser = google-chrome
+    format = html
+[web]
+	browser= google-chrome
+[winUpdater]
+	recentlySeenVersion = 2.25.0.windows.1
+	
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[sendemail]
+	smtpserver = smtp.gmail.com
+	smtpserverport = 587
+	smtpencryption = tls
+	smtpuser = al.neodim@gmail.com
+
+[safe]
+	directory = /media/all/ProgramsAndGames/pr/2020/
+	directory = /media/all/ProgramsAndGames/pr/2020/git.debian.fork
+	directory = /media/all/ProgramsAndGames/pr/2020/
+	directory = /media/all/ProgramsAndGames/pr/2020/git
+	directory = /media/all/ProgramsAndGames/pr/Devdocs/MDN/content
+	directory = /media/all/ProgramsAndGames/pr/2020/c++.practice
+	directory = /media/all/ProgramsAndGames/Backup/Users/Google Chrome Backup/Snippets
+	directory = /media/all/ProgramsAndGames/pr/2019/user-css
+	directory = /media/all/ProgramsAndGames/pr/2020/cmake.fork
+	directory = /media/all/ProgramsAndGames/pr/2021/visual-studio-code/workspaces-cache
+	directory = /media/all/ProgramsAndGames/pr/Devdocs/zsh
+	directory = /media/all/ProgramsAndGames/Downloads/Software.x86.x64.Drivers/TP-Link_WiFiAdapter/rtl8188eu.fork
+	directory = /media/all/ProgramsAndGames/pr/2015/node
+	directory = /media/all/ProgramsAndGames/pr/2017/project-boilerplate
+	directory = /media/all/ProgramsAndGames/pr/2019/send.fork
+	directory = /media/all/ProgramsAndGames/pr/2019/serve-static.fork
+	directory = /media/all/ProgramsAndGames/pr/2017/countries.fork
+	directory = /media/all/ProgramsAndGames/pr/hinell
+	directory = /media/all/ProgramsAndGames/pr/2021/Wikipedia
+	directory = /media/all/ProgramsAndGames/pr/2022/hsnips
+	directory = /media/all/ProgramsAndGames/pr/2022/CMake-GitVersion.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/CMake-GitVersion.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/git-repo-data-cmake
+	directory = /media/all/ProgramsAndGames/pr/2022/shell/soundcloud-m3u82mp3
+	directory = /media/all/ProgramsAndGames/pr/2015/node.fork
+	directory = /media/all/ProgramsAndGames/pr/2020/hyperscan.c++.fork
+	directory = /media/all/ProgramsAndGames/pr/2020/LangX
+	directory = /media/all/ProgramsAndGames/pr/2020/git.fork
+	directory = /media/all/ProgramsAndGames/pr/Devdocs/learnxinyminutes-site.fork
+	directory = /media/all/ProgramsAndGames/pr/Devdocs/learnxinyminutes-site.fork/source/docs
+	directory = /media/all/ProgramsAndGames/pr/2022/neovim/plugins/telescope.nvim.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/neovim/doc.fork.main
+	directory = /media/all/ProgramsAndGames/pr/2022/kicanvas.fork
+	directory = /media/all/ProgramsAndGames/pr/Devdocs/language-server-protocol.fork
+	directory = /media/all/ProgramsAndGames/pr/2021/shell/options-select
+	directory = /media/all/ProgramsAndGames/Downloads/Software.Operating Systems/Linux/linux-installing-2020/AkavaKv/Akava-Kv.fork
+	directory = /media/all/ProgramsAndGames/Downloads/Software.Operating Systems/Linux/linux-installing-2020/AkavaKv/Akava-Kv.fork
+	directory = /media/all/ProgramsAndGames/pr/2019/marked.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/forks/solvespace
+	directory = /media/all/ProgramsAndGames/pr/2022/forks/mold
+	directory = /media/all/ProgramsAndGames/pr/2022/neovim/neovim.github.io.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/neovim/doc.fork
+	directory = /media/all/ProgramsAndGames/pr/2023/forks/jsoncrack.com.fork
+	directory = /media/all/ProgramsAndGames/pr/2023/observer-pattern
+	directory = /media/all/ProgramsAndGames/pr/2019/games/io.games/devast.io
+	directory = /media/all/ProgramsAndGames/pr/2023/scuffold
+	directory = /media/all/ProgramsAndGames/pr/2023/whiptail-themes
+	directory = /home/alex/dotfiles
+	directory = /home/alex/dotfiles/nvim
+	directory = /media/all/ProgramsAndGames/pr/2023/scaffold
+	directory = /home/alex/dotfiles/nvim
+	directory = /home/alex/dotfiles/vscode
+	directory = /media/all/ProgramsAndGames/pr/2023/forks/axieax/dotconfig.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/neovim
+	directory = /media/all/ProgramsAndGames/pr/2022/neovim/neovim.fork
+	directory = /media/all/ProgramsAndGames/pr/2023/forks/awesome-neovim
+	directory = /media/all/ProgramsAndGames/pr/2022/neovim/configs/antgubarev-dotfiles
+	directory = /media/all/ProgramsAndGames/pr/2021/forks/kwin
+	directory = /media/all/ProgramsAndGames/pr/2022/forks/zsh.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/forks/tree-sitter
+	directory = /media/all/ProgramsAndGames/pr/2020/forks/cmake.fork
+	directory = /home/alex/.local/share/nvim/lazy/move.nvim
+	directory = /media/all/ProgramsAndGames/pr/2023/devtools
+	directory = /home/alex/.local/share/nvim/lazy/tabs-focus-previous.nvim
+	directory = /media/all/ProgramsAndGames/pr/Devdocs/pnpm.io.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/forks/tree-sitter-typescript
+	directory = /media/all/ProgramsAndGames/pr/2019/forks/TypeScript
+	directory = /tmp/project-23oHunnKG
+	directory = /media/all/ProgramsAndGames/pr/2022/forks/tree-sitter-javascript
+	directory = /media/all/ProgramsAndGames/pr/2020/forks/git.fork
+	directory = /media/all/ProgramsAndGames/pr/2020/forks/LspCpp.fork
+	directory = /media/all/ProgramsAndGames/pr/2022/forks/tree-sitter-zsh
+	directory = /home/alex/.local/share/nvim/lazy/nvim-tree-git.nvim
+	directory = /media/all/ProgramsAndGames/pr/2023/std.sh
+	directory = /media/all/ProgramsAndGames/pr/2022/forks/neovim/neovim.fork
+	directory = /media/all/ProgramsAndGames/Backup/Users/Google Chrome Backup/Extensions/open-bookmark-manager
+	directory = /media/all/ProgramsAndGames/pr/2022/FOSSIL
+	directory = /home/alex/.local/share/nvim/lazy/lua-std.nvim/doc
+	directory = /media/all/ProgramsAndGames/pr/2015/forks/node.fork
+	directory = /home/alex/.local/share/nvim/lazy/nvim-api.nvim

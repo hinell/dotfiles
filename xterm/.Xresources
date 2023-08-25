@@ -1,0 +1,42 @@
+! Last-Modified: February 05, 2023
+! Use `man xterm` to learn more about these configs
+! To update, run
+! sudo xrdb -global -load ~/.Xresources ; xrdb -query  ; xterm -sb -rightbar -e nvim
+! To check fonts, use xfd tool 
+! NOTE: Use Nerd Font Mono for fixed width icons
+XTerm.VT100.faceSize: 10
+XTerm.VT100.faceName: JetBrainsMono Nerd Font Mono
+XTerm.VT100.fastScroll: true
+XTerm.VT100.background: #232627
+XTerm.VT100.foreground: #fcfcfc
+!
+! This does not work with nvim 
+! Xterm.VT100.ScrollBar: true
+! Xterm.VT100.ScrollBar.thickness: 10
+! Xterm.VT100.ScrollBar.thumb: None
+! Xterm.VT100.scrollBar.foreground: #111111
+! Xterm.VT100.scrollBar.background: #355555
+! Xterm.VT100.scrollBar.borderWidth: 3
+! Xterm.VT100.scrollBarBorder: 0
+! Xterm.VT100.rightSrollBar: true
+!Use $ showkey -a to find out VT100 keycodes
+!See https://www.xfree86.org/current/ctlseqs.html#VT100%20Mode
+!The following binds
+!	Ctrl+Shift+PgUp
+!	Ctrl+Shift+PgDown
+!	Ctrl+Shift+BackSpacet
+!	     Shift+BackSpacet
+!	Ctrl+PgDown
+! Ctrl <key>BackSpace : string("\E[5;6~") \n\
+
+XTerm.VT100.translations: #override \n\
+			 Ctrl <Key>/: string("\E[0x8f;o;5~") \n\
+			 Ctrl <Key>.: string("\E[3;5~") \n\
+        Ctrl Shift <Key>BackSpace: string("\E[27;6;8~") \n\
+             Shift <Key>BackSpace: string("\E[27;2;8~") \n\
+        Ctrl Shift <KeyPress> Prior: string("\E[5;6~") \n\
+        Ctrl Shift <KeyPress> Next: string("\E[6;6~") \n\
+		Ctrl <Key>+: larger-vt-font() \n\
+		Ctrl <Key>-: smaller-vt-font()
+		 
+
